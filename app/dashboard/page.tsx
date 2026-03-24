@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Board } from "@/components/board/Board";
 import { CreateProjectModal } from "@/components/board/CreateProjectModal";
+import { InviteMemberModal } from "@/components/board/InviteMemberModal";
 import { useBoardStore, useUIStore } from "@/store/board.store";
 import type { ProjectWithRelations } from "@/lib/types";
 import "@/styles/pages/_dashboard.scss";
@@ -18,7 +19,9 @@ export default function DashboardPage() {
 
   const [projects, setProjects] = useState<ProjectWithRelations[]>([]);
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
+  const [pinnedProjectIds, setPinnedProjectIds] = useState<string[]>([]);
   const [showCreateProject, setShowCreateProject] = useState(false);
+  const [showInvite, setShowInvite] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const { setSearchQuery: setStoreSearch } = useBoardStore();
 
@@ -32,6 +35,12 @@ export default function DashboardPage() {
           setProject(data.projects[0]);
         }
       });
+
+    // Load pinned from localStorage
+    try {
+      const saved = JSON.parse(localStorage.getItem("pinnedProjects") ?? "[]");
+      setPinnedProjectIds(saved);
+    } catch {}
   }, [setProject]);
 
   const handleProjectSelect = (id: string) => {
@@ -48,6 +57,31 @@ export default function DashboardPage() {
     setProject(newProject);
   };
 
+  const handlePin = (projectId: string) => {
+    setPinnedProjectIds((prev) => {
+      const next = prev.includes(projectId)
+        ? prev.filter((id) => id !== projectId)
+        : [...prev, projectId];
+      localStorage.setItem("pinnedProjects", JSON.stringify(next));
+
+      // Also call API for server-side persistence
+      fetch(`/api/projects/${projectId}/pin`, { method: "POST" });
+
+      return next;
+    });
+  };
+
+  const handleMemberInvited = (member: { user: { id: string; name: string | null; email: string | null; image: string | null }; role: string }) => {
+    if (!project) return;
+    setProjects((prev) =>
+      prev.map((p) =>
+        p.id === project.id
+          ? { ...p, members: [...p.members, { ...member, id: member.user.id, createdAt: new Date(), userId: member.user.id, projectId: p.id }] }
+          : p
+      )
+    );
+  };
+
   const handleSearch = (q: string) => {
     setSearchQuery(q);
     setStoreSearch(q);
@@ -56,12 +90,15 @@ export default function DashboardPage() {
   const user = session?.user ?? {};
 
   return (
-    <div className="dashboard" data-theme={useUIStore.getState().theme}>
+    <div className="dashboard">
       <Sidebar
         projects={projects}
         activeProjectId={activeProjectId ?? undefined}
         onProjectSelect={handleProjectSelect}
+        onPinProject={handlePin}
+        pinnedProjectIds={pinnedProjectIds}
         user={user}
+        onInviteClick={() => setShowInvite(true)}
       />
 
       <div className={`main-content ${!sidebarOpen ? "main-content--sidebar-collapsed" : ""}`}>
@@ -91,9 +128,17 @@ export default function DashboardPage() {
               />
             </div>
 
-            <button className="topbar__icon-btn" onClick={toggleTheme} title="Toggle theme">
-              ◑
-            </button>
+            <button className="topbar__icon-btn" onClick={toggleTheme} title="Toggle theme">◑</button>
+
+            {project && (
+              <button
+                className="btn btn--secondary btn--sm"
+                onClick={() => setShowInvite(true)}
+                title="Invite team member"
+              >
+                + Invite
+              </button>
+            )}
 
             <button
               className="btn btn--primary btn--sm"
@@ -129,8 +174,8 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="page-header__actions">
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    {project.members.slice(0, 4).map((m) => (
+                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    {project.members.slice(0, 5).map((m) => (
                       <div
                         key={m.user.id}
                         style={{
@@ -147,22 +192,28 @@ export default function DashboardPage() {
                           fontWeight: 600,
                           color: "var(--text-secondary)",
                           marginLeft: -6,
+                          cursor: "pointer",
                         }}
                         title={m.user.name ?? m.user.email ?? ""}
+                        onClick={() => setShowInvite(true)}
                       >
                         {m.user.image ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={m.user.image}
-                            alt={m.user.name ?? ""}
-                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                          />
+                          <img src={m.user.image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                         ) : (
                           m.user.name?.charAt(0).toUpperCase()
                         )}
                       </div>
                     ))}
-                    <span style={{ fontSize: 12, color: "var(--text-muted)", marginLeft: 6 }}>
+                    <span
+                      style={{
+                        fontSize: 12,
+                        color: "var(--text-muted)",
+                        marginLeft: 10,
+                        cursor: "pointer",
+                      }}
+                      onClick={() => setShowInvite(true)}
+                    >
                       {project.members.length} member{project.members.length !== 1 ? "s" : ""}
                     </span>
                   </div>
@@ -186,10 +237,7 @@ export default function DashboardPage() {
               <div style={{ fontSize: 48 }}>⊕</div>
               <p style={{ fontSize: 16, fontWeight: 500 }}>No projects yet</p>
               <p style={{ fontSize: 13 }}>Create your first project to get started</p>
-              <button
-                className="btn btn--primary"
-                onClick={() => setShowCreateProject(true)}
-              >
+              <button className="btn btn--primary" onClick={() => setShowCreateProject(true)}>
                 + Create Project
               </button>
             </div>
@@ -201,6 +249,15 @@ export default function DashboardPage() {
         <CreateProjectModal
           onClose={() => setShowCreateProject(false)}
           onCreated={handleProjectCreated}
+        />
+      )}
+
+      {showInvite && project && (
+        <InviteMemberModal
+          projectId={project.id}
+          members={project.members}
+          onClose={() => setShowInvite(false)}
+          onInvited={handleMemberInvited}
         />
       )}
     </div>

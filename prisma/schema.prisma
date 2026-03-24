@@ -15,15 +15,17 @@ model User {
   emailVerified DateTime?
   image         String?
   password      String?
+  bio           String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts      Account[]
-  sessions      Session[]
-  ownedProjects Project[] @relation("ProjectOwner")
-  memberships   Member[]
-  assignedTasks Task[]    @relation("TaskAssignee")
-  createdTasks  Task[]    @relation("TaskCreator")
+  accounts       Account[]
+  sessions       Session[]
+  ownedProjects  Project[]       @relation("ProjectOwner")
+  memberships    Member[]
+  assignedTasks  Task[]          @relation("TaskAssignee")
+  createdTasks   Task[]          @relation("TaskCreator")
+  pinnedProjects PinnedProject[]
 }
 
 model Account {
@@ -62,10 +64,23 @@ model Project {
   updatedAt   DateTime @updatedAt
   ownerId     String
 
-  owner   User     @relation("ProjectOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  members Member[]
-  tasks   Task[]
-  labels  Label[]
+  owner    User            @relation("ProjectOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members  Member[]
+  tasks    Task[]
+  labels   Label[]
+  pinnedBy PinnedProject[]
+}
+
+model PinnedProject {
+  id        String   @id @default(cuid())
+  userId    String
+  projectId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, projectId])
 }
 
 model Member {

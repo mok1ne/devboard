@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { useBoardStore, useUIStore } from "@/store/board.store";
 import type { TaskPriority, TaskStatus } from "@/lib/types";
 import "@/styles/components/_modal.scss";
@@ -20,13 +21,14 @@ const STATUS_LABELS: Record<TaskStatus, string> = {
 export function TaskModal() {
   const { taskModalOpen, closeTaskModal, editingTask, createTaskStatus } = useUIStore();
   const { project, addTask, updateTask, removeTask } = useBoardStore();
+  const { data: session } = useSession();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState<TaskStatus>("BACKLOG");
   const [priority, setPriority] = useState<TaskPriority>("MEDIUM");
   const [dueDate, setDueDate] = useState("");
-  const [assigneeId, setAssigneeId] = useState("");
+  const [assigneeId, setAssigneeId] = useState(session?.user?.id ?? "");
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -48,7 +50,7 @@ export function TaskModal() {
       setStatus(createTaskStatus ?? "BACKLOG");
       setPriority("MEDIUM");
       setDueDate("");
-      setAssigneeId("");
+      setAssigneeId(session?.user?.id ?? "");
     }
   }, [editingTask, createTaskStatus]);
 

@@ -13,7 +13,7 @@ interface InviteMemberModalProps {
   projectId: string;
   members: Member[];
   onClose: () => void;
-  onInvited: (member: Member) => void;
+  onInvited: () => void;
 }
 
 export function InviteMemberModal({ projectId, members, onClose, onInvited }: InviteMemberModalProps) {
@@ -42,7 +42,7 @@ export function InviteMemberModal({ projectId, members, onClose, onInvited }: In
     } else {
       setSuccess(`${data.member.user.name ?? email} added to project!`);
       setEmail("");
-      onInvited(data.member);
+      onInvited();
     }
   };
 

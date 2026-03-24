@@ -71,28 +71,17 @@ export default function DashboardPage() {
     });
   };
 
-  const handleMemberInvited = (member: { user: { id: string; name: string | null; email: string | null; image: string | null }; role: string }) => {
-    if (!project) return;
-    setProjects((prev) =>
-      prev.map((p) =>
-        p.id === project.id
-          ? {
-              ...p,
-              members: [
-                ...p.members,
-                {
-                  id: member.user.id,
-                  createdAt: new Date(),
-                  userId: member.user.id,
-                  projectId: p.id,
-                  role: member.role as import("@prisma/client").MemberRole,
-                  user: member.user,
-                },
-              ],
-            }
-          : p
-      )
-    );
+  const handleMemberInvited = () => {
+    // Refetch projects to get updated members list with correct types
+    fetch("/api/projects")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.projects?.length) {
+          setProjects(data.projects);
+          const active = data.projects.find((p: ProjectWithRelations) => p.id === activeProjectId);
+          if (active) setProject(active);
+        }
+      });
   };
 
   const handleSearch = (q: string) => {

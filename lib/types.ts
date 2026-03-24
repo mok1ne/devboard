@@ -2,14 +2,25 @@ import type { Task, Project, User, Label, Member, MemberRole, TaskStatus, TaskPr
 
 export type { TaskStatus, TaskPriority, MemberRole };
 
+export type UserPreview = {
+  id: string;
+  name: string | null;
+  image: string | null;
+  email: string | null;
+};
+
+export type MemberWithUser = Member & {
+  user: UserPreview;
+};
+
 export type TaskWithRelations = Task & {
-  assignee: Pick<User, "id" | "name" | "image"> | null;
-  creator: Pick<User, "id" | "name" | "image">;
+  assignee: UserPreview | null;
+  creator: UserPreview;
   labels: Label[];
 };
 
 export type ProjectWithRelations = Project & {
-  members: (Member & { user: Pick<User, "id" | "name" | "image" | "email"> })[];
+  members: MemberWithUser[];
   _count: { tasks: number };
 };
 

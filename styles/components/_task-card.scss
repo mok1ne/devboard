@@ -1,0 +1,129 @@
+@import "../variables";
+
+.task-card {
+  background: var(--bg-card);
+  border: 1px solid var(--bg-border);
+  border-radius: $radius-md;
+  padding: $space-3 $space-4;
+  cursor: pointer;
+  transition: all $transition-fast;
+  position: relative;
+  overflow: hidden;
+  animation: fadeIn $transition-base both;
+
+  &::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    border-radius: $radius-sm 0 0 $radius-sm;
+    background: var(--priority-color, var(--accent));
+    transition: width $transition-fast;
+  }
+
+  &:hover {
+    border-color: var(--text-muted);
+    box-shadow: $shadow-md;
+    transform: translateY(-1px);
+
+    &::before {
+      width: 4px;
+    }
+  }
+
+  &--dragging {
+    opacity: 0.5;
+    border: 2px dashed var(--accent);
+    box-shadow: $shadow-accent;
+  }
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: $space-2;
+    margin-bottom: $space-2;
+  }
+
+  &__title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    line-height: 1.4;
+    flex: 1;
+  }
+
+  &__priority {
+    width: 20px;
+    height: 20px;
+    border-radius: $radius-sm;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 10px;
+  }
+
+  &__labels {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $space-1;
+    margin-bottom: $space-2;
+  }
+
+  &__label {
+    padding: 2px $space-2;
+    border-radius: $radius-full;
+    font-size: 10px;
+    font-weight: 500;
+    font-family: $font-body;
+  }
+
+  &__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: $space-2;
+  }
+
+  &__due-date {
+    display: flex;
+    align-items: center;
+    gap: $space-1;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: $font-mono;
+
+    &--overdue {
+      color: $color-danger;
+    }
+
+    &--soon {
+      color: $color-warning;
+    }
+  }
+
+  &__assignee {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--bg-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    border: 1.5px solid var(--bg-secondary);
+  }
+}
+
+// Priority color vars
+.priority-low { --priority-color: #{$priority-low}; }
+.priority-medium { --priority-color: #{$priority-medium}; }
+.priority-high { --priority-color: #{$priority-high}; }
+.priority-critical { --priority-color: #{$priority-critical}; }

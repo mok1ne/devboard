@@ -1,0 +1,132 @@
+@import url("https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap");
+
+@import "./variables";
+
+// ─── CSS Custom Properties ────────────────────────────────────────────────────
+:root {
+  --bg-primary: #{$color-bg-primary};
+  --bg-secondary: #{$color-bg-secondary};
+  --bg-card: #{$color-bg-card};
+  --bg-hover: #{$color-bg-hover};
+  --bg-border: #{$color-bg-border};
+  --accent: #{$color-accent};
+  --accent-light: #{$color-accent-light};
+  --accent-dim: #{$color-accent-dim};
+  --text-primary: #{$color-text-primary};
+  --text-secondary: #{$color-text-secondary};
+  --text-muted: #{$color-text-muted};
+}
+
+[data-theme="light"] {
+  --bg-primary: #{$light-bg-primary};
+  --bg-secondary: #{$light-bg-secondary};
+  --bg-card: #{$light-bg-card};
+  --bg-hover: #{$light-bg-hover};
+  --bg-border: #{$light-bg-border};
+  --text-primary: #{$light-text-primary};
+  --text-secondary: #{$light-text-secondary};
+  --text-muted: #{$light-text-muted};
+}
+
+// ─── Reset ────────────────────────────────────────────────────────────────────
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: $font-body;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  cursor: pointer;
+  font-family: inherit;
+  border: none;
+  background: none;
+}
+
+input,
+textarea,
+select {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+// ─── Scrollbar ────────────────────────────────────────────────────────────────
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bg-border);
+  border-radius: $radius-full;
+
+  &:hover {
+    background: var(--text-muted);
+  }
+}
+
+// ─── Utilities ────────────────────────────────────────────────────────────────
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+// ─── Animations ───────────────────────────────────────────────────────────────
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.animate-fade-in { animation: fadeIn $transition-base both; }
+.animate-scale-in { animation: scaleIn $transition-fast both; }

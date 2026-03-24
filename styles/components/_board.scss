@@ -1,0 +1,115 @@
+@import "../variables";
+
+.board {
+  display: flex;
+  gap: $space-4;
+  height: 100%;
+  overflow-x: auto;
+  padding-bottom: $space-4;
+
+  &::-webkit-scrollbar {
+    height: 8px;
+  }
+}
+
+.column {
+  flex-shrink: 0;
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-secondary);
+  border: 1px solid var(--bg-border);
+  border-radius: $radius-lg;
+  overflow: hidden;
+
+  &--drag-over {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: $space-4;
+    border-bottom: 1px solid var(--bg-border);
+    flex-shrink: 0;
+  }
+
+  &__title-group {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+  }
+
+  &__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  &__title {
+    font-family: $font-display;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: 0.01em;
+  }
+
+  &__count {
+    font-size: 11px;
+    color: var(--text-muted);
+    background: var(--bg-border);
+    padding: 2px 7px;
+    border-radius: $radius-full;
+    font-family: $font-mono;
+  }
+
+  &__add-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: $radius-sm;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    transition: all $transition-fast;
+    font-size: 16px;
+    line-height: 1;
+
+    &:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+  }
+
+  &__tasks {
+    flex: 1;
+    overflow-y: auto;
+    padding: $space-3;
+    display: flex;
+    flex-direction: column;
+    gap: $space-2;
+    min-height: 80px;
+  }
+
+  &__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: $space-8 $space-4;
+    color: var(--text-muted);
+    font-size: 12px;
+    text-align: center;
+    gap: $space-2;
+    opacity: 0.6;
+  }
+}
+
+// Column status colors
+.column-backlog .column__dot { background: $status-backlog; }
+.column-todo .column__dot { background: $status-todo; }
+.column-in-progress .column__dot { background: $status-in-progress; }
+.column-in-review .column__dot { background: $status-in-review; }
+.column-done .column__dot { background: $status-done; }

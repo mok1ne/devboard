@@ -25,7 +25,6 @@ const COLUMNS: TaskStatus[] = ["BACKLOG", "TODO", "IN_PROGRESS", "IN_REVIEW", "D
 interface BoardProps {
   projectId: string;
 }
-
 export function Board({ projectId }: BoardProps) {
   const { tasks, setTasks, setLoading, activeTask, setActiveTask, getFilteredTasks, moveTask } =
     useBoardStore();

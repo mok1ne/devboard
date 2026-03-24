@@ -19,24 +19,31 @@ export default function SettingsPage() {
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
   const [joinedAt, setJoinedAt] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/settings")
       .then((r) => r.json())
       .then((data) => {
         if (data.user) {
-          setName(data.user.name ?? "");
+          setName(data.user.name ?? session?.user?.name ?? "");
           setBio(data.user.bio ?? "");
+          setAvatarUrl(data.user.image ?? null);
           setJoinedAt(
             new Date(data.user.createdAt).toLocaleDateString("en-GB", {
-              day: "numeric",
-              month: "long",
-              year: "numeric",
+              day: "numeric", month: "long", year: "numeric",
             })
           );
         }
       });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Fallback to session name if DB fetch hasn't returned yet
+  const displayName = name || session?.user?.name || "";
+  const displayEmail = session?.user?.email ?? "";
+  const displayAvatar = avatarUrl ?? session?.user?.image ?? null;
+  const isGitHubUser = !!session?.user?.image;
 
   const showSuccess = (msg: string) => {
     setSuccess(msg);
@@ -57,7 +64,6 @@ export default function SettingsPage() {
 
     const data = await res.json();
     setLoading(false);
-
     if (!res.ok) setError(data.error ?? "Failed to update");
     else showSuccess("Profile updated successfully");
   };
@@ -75,7 +81,6 @@ export default function SettingsPage() {
 
     const data = await res.json();
     setPasswordLoading(false);
-
     if (!res.ok) setError(data.error ?? "Failed to update password");
     else {
       showSuccess("Password updated successfully");
@@ -83,8 +88,6 @@ export default function SettingsPage() {
       setNewPassword("");
     }
   };
-
-  const user = session?.user;
 
   return (
     <div className="page-content">
@@ -96,12 +99,10 @@ export default function SettingsPage() {
       </div>
 
       <div className="settings-page">
-        {success && (
-          <div className="success-toast">✓ {success}</div>
-        )}
+        {success && <div className="success-toast">✓ {success}</div>}
         {error && <p className="form-error" style={{ marginBottom: 8 }}>⚠ {error}</p>}
 
-        {/* Profile Section */}
+        {/* Profile */}
         <div className="settings-page__section">
           <div className="settings-page__section-header">
             <div className="settings-page__section-title">Profile</div>
@@ -110,18 +111,19 @@ export default function SettingsPage() {
 
           <form onSubmit={handleProfile}>
             <div className="settings-page__section-body">
-              {/* Avatar */}
               <div className="settings-page__avatar-row">
                 <div className="settings-page__avatar">
-                  {user?.image ? (
-                    <Image src={user.image} alt={user.name ?? ""} width={72} height={72} />
+                  {displayAvatar ? (
+                    <Image src={displayAvatar} alt={displayName} width={72} height={72} />
                   ) : (
-                    name?.charAt(0)?.toUpperCase() ?? "U"
+                    displayName?.charAt(0)?.toUpperCase() ?? "U"
                   )}
                 </div>
                 <div className="settings-page__avatar-info">
-                  <div className="settings-page__avatar-name">{name || "Your Name"}</div>
-                  <div className="settings-page__avatar-email">{user?.email}</div>
+                  <div className="settings-page__avatar-name">
+                    {displayName || "Your Name"}
+                  </div>
+                  <div className="settings-page__avatar-email">{displayEmail}</div>
                   {joinedAt && (
                     <div className="settings-page__avatar-joined">Joined {joinedAt}</div>
                   )}
@@ -134,7 +136,7 @@ export default function SettingsPage() {
                   className="form-input"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Your full name"
+                  placeholder={session?.user?.name ?? "Your full name"}
                   required
                   minLength={2}
                 />
@@ -165,12 +167,12 @@ export default function SettingsPage() {
           </form>
         </div>
 
-        {/* Password Section */}
+        {/* Password */}
         <div className="settings-page__section">
           <div className="settings-page__section-header">
             <div className="settings-page__section-title">Password</div>
             <div className="settings-page__section-desc">
-              {user?.image
+              {isGitHubUser
                 ? "You signed in with GitHub — password login is not set"
                 : "Update your account password"}
             </div>
@@ -186,6 +188,7 @@ export default function SettingsPage() {
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   placeholder="••••••••"
+                  disabled={isGitHubUser}
                 />
               </div>
               <div className="form-group">
@@ -197,6 +200,7 @@ export default function SettingsPage() {
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Min. 6 characters"
                   minLength={6}
+                  disabled={isGitHubUser}
                 />
               </div>
             </div>
@@ -205,7 +209,7 @@ export default function SettingsPage() {
               <button
                 type="submit"
                 className={`btn btn--primary ${passwordLoading ? "btn--loading" : ""}`}
-                disabled={passwordLoading}
+                disabled={passwordLoading || isGitHubUser}
               >
                 {!passwordLoading && "Update password"}
               </button>
@@ -216,25 +220,19 @@ export default function SettingsPage() {
         {/* Danger Zone */}
         <div className="settings-page__section settings-page__danger-zone">
           <div className="settings-page__section-header">
-            <div className="settings-page__section-title" style={{ color: "var(--color-danger, #ef4444)" }}>
+            <div className="settings-page__section-title" style={{ color: "#ef4444" }}>
               Danger Zone
             </div>
-            <div className="settings-page__section-desc">Irreversible actions</div>
           </div>
           <div className="settings-page__section-body">
             <div className="settings-page__danger-row">
               <div>
-                <div className="settings-page__section-title" style={{ fontSize: 13 }}>
+                <div style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)" }}>
                   Sign out of all devices
                 </div>
-                <div className="settings-page__danger-text">
-                  This will end all active sessions
-                </div>
+                <div className="settings-page__danger-text">This will end all active sessions</div>
               </div>
-              <button
-                className="btn btn--danger"
-                onClick={() => signOut({ callbackUrl: "/auth/login" })}
-              >
+              <button className="btn btn--danger" onClick={() => signOut({ callbackUrl: "/auth/login" })}>
                 Sign out
               </button>
             </div>

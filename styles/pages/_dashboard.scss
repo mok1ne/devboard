@@ -4,6 +4,7 @@
   display: flex;
   min-height: 100vh;
   background: var(--bg-primary);
+  position: relative;
 }
 
 .main-content {
@@ -13,6 +14,8 @@
   flex-direction: column;
   min-height: 100vh;
   transition: margin-left $transition-base;
+  min-width: 0;
+  overflow: hidden;
 
   &--sidebar-collapsed {
     margin-left: $sidebar-collapsed;

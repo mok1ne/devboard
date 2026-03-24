@@ -11,12 +11,15 @@ interface ProjectContextType {
   pinnedProjectIds: string[];
   showInvite: boolean;
   showCreateProject: boolean;
+  searchQuery: string;
   setShowInvite: (v: boolean) => void;
   setShowCreateProject: (v: boolean) => void;
+  setSearchQuery: (q: string) => void;
   handleProjectSelect: (id: string) => void;
   handlePin: (id: string) => void;
   handleProjectCreated: (p: ProjectWithRelations) => void;
   handleMemberInvited: () => void;
+  handleDeleteProject: (id: string) => Promise<void>;
   refetchProjects: () => void;
 }
 
@@ -30,13 +33,14 @@ export function useProjectContext() {
 
 export function ProjectProvider({ children }: { children: ReactNode }) {
   const { data: session } = useSession();
-  const { setProject } = useBoardStore();
+  const { setProject, project } = useBoardStore();
 
   const [projects, setProjects] = useState<ProjectWithRelations[]>([]);
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [pinnedProjectIds, setPinnedProjectIds] = useState<string[]>([]);
   const [showInvite, setShowInvite] = useState(false);
   const [showCreateProject, setShowCreateProject] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const refetchProjects = useCallback(() => {
     fetch("/api/projects")
@@ -50,6 +54,10 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
             if (found) setProject(found);
             return found ? id : data.projects[0].id;
           });
+        } else {
+          setProjects([]);
+          setActiveProjectId(null);
+          setProject(null as unknown as ProjectWithRelations);
         }
       });
   }, [setProject]);
@@ -86,6 +94,35 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
 
   const handleMemberInvited = () => refetchProjects();
 
+  const handleDeleteProject = async (id: string) => {
+    const res = await fetch(`/api/projects/${id}`, { method: "DELETE" });
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error ?? "Failed to delete project");
+    }
+
+    const remaining = projects.filter((p) => p.id !== id);
+    setProjects(remaining);
+
+    // Remove from pinned if pinned
+    setPinnedProjectIds((prev) => {
+      const next = prev.filter((pid) => pid !== id);
+      localStorage.setItem("pinnedProjects", JSON.stringify(next));
+      return next;
+    });
+
+    // Switch to another project or clear
+    if (activeProjectId === id) {
+      if (remaining.length > 0) {
+        setActiveProjectId(remaining[0].id);
+        setProject(remaining[0]);
+      } else {
+        setActiveProjectId(null);
+        setProject(null as unknown as ProjectWithRelations);
+      }
+    }
+  };
+
   return (
     <ProjectContext.Provider value={{
       projects,
@@ -93,12 +130,15 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
       pinnedProjectIds,
       showInvite,
       showCreateProject,
+      searchQuery,
       setShowInvite,
       setShowCreateProject,
+      setSearchQuery,
       handleProjectSelect,
       handlePin,
       handleProjectCreated,
       handleMemberInvited,
+      handleDeleteProject,
       refetchProjects,
     }}>
       {children}

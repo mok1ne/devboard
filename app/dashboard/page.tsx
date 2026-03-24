@@ -1,16 +1,15 @@
 "use client";
 
-import { useUIStore, useBoardStore } from "@/store/board.store";
+import { useBoardStore } from "@/store/board.store";
 import { useProjectContext } from "@/lib/project-context";
 import { Board } from "@/components/board/Board";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import "@/styles/pages/_dashboard.scss";
 import "@/styles/components/_button.scss";
 
 export default function DashboardPage() {
-  const { toggleTheme } = useUIStore();
   const { project } = useBoardStore();
-  const { setShowInvite, setShowCreateProject } = useProjectContext();
-  const { setSearchQuery } = useBoardStore();
+  const { setShowInvite, setShowCreateProject, setSearchQuery } = useProjectContext();
 
   return (
     <>
@@ -37,7 +36,9 @@ export default function DashboardPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <button className="topbar__icon-btn" onClick={toggleTheme} title="Toggle theme">◑</button>
+
+          <ThemeToggle />
+
           {project && (
             <button className="btn btn--secondary btn--sm" onClick={() => setShowInvite(true)}>
               + Invite

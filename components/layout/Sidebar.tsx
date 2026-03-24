@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
 import { useUIStore } from "@/store/board.store";
+import { useProjectContext } from "@/lib/project-context";
 import type { ProjectWithRelations } from "@/lib/types";
 import "@/styles/components/_sidebar.scss";
 
@@ -32,6 +34,7 @@ export function Sidebar({
   onInviteClick,
 }: SidebarProps) {
   const { sidebarOpen, toggleSidebar } = useUIStore();
+  const { handleDeleteProject } = useProjectContext();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -40,18 +43,15 @@ export function Sidebar({
 
   return (
     <aside className={`sidebar ${!sidebarOpen ? "sidebar--collapsed" : ""}`}>
-      {/* Logo */}
       <div className="sidebar__logo">
         <div className="sidebar__logo-icon">D</div>
         <span className="sidebar__logo-text">DevBoard</span>
       </div>
 
-      {/* Toggle */}
       <button className="sidebar__toggle" onClick={toggleSidebar} title="Toggle sidebar">
         {sidebarOpen ? "‹" : "›"}
       </button>
 
-      {/* Nav */}
       <div className="sidebar__section">
         <div className="sidebar__section-title">Menu</div>
         {NAV_ITEMS.map((item) => (
@@ -66,7 +66,6 @@ export function Sidebar({
         ))}
       </div>
 
-      {/* Pinned Projects */}
       {pinned.length > 0 && (
         <div className="sidebar__section">
           <div className="sidebar__section-title">Pinned</div>
@@ -78,6 +77,7 @@ export function Sidebar({
               isActive={activeProjectId === project.id}
               onSelect={() => { onProjectSelect(project.id); router.push("/dashboard"); }}
               onPin={() => onPinProject(project.id)}
+              onDelete={() => handleDeleteProject(project.id)}
               onInvite={onInviteClick}
               sidebarOpen={sidebarOpen}
             />
@@ -85,7 +85,6 @@ export function Sidebar({
         </div>
       )}
 
-      {/* All Projects */}
       <div className="sidebar__section">
         <div className="sidebar__section-title">Projects</div>
       </div>
@@ -99,6 +98,7 @@ export function Sidebar({
             isActive={activeProjectId === project.id}
             onSelect={() => { onProjectSelect(project.id); router.push("/dashboard"); }}
             onPin={() => onPinProject(project.id)}
+            onDelete={() => handleDeleteProject(project.id)}
             onInvite={onInviteClick}
             sidebarOpen={sidebarOpen}
           />
@@ -111,7 +111,6 @@ export function Sidebar({
         )}
       </div>
 
-      {/* User — click goes to settings */}
       <div className="sidebar__user" onClick={() => router.push("/dashboard/settings")}>
         <div className="sidebar__avatar">
           {user.image ? (
@@ -124,13 +123,7 @@ export function Sidebar({
           <div className="sidebar__user-name">{user.name ?? "User"}</div>
           <div className="sidebar__user-email">{user.email}</div>
         </div>
-        <span
-          className="sidebar__label"
-          style={{ fontSize: 16, color: "var(--text-muted)", flexShrink: 0 }}
-          title="Settings"
-        >
-          ⚙
-        </span>
+        <span className="sidebar__label" style={{ fontSize: 16, color: "var(--text-muted)", flexShrink: 0 }}>⚙</span>
       </div>
     </aside>
   );
@@ -142,6 +135,7 @@ function ProjectItem({
   isActive,
   onSelect,
   onPin,
+  onDelete,
   sidebarOpen,
 }: {
   project: ProjectWithRelations;
@@ -149,47 +143,78 @@ function ProjectItem({
   isActive: boolean;
   onSelect: () => void;
   onPin: () => void;
+  onDelete: () => void;
   onInvite: () => void;
   sidebarOpen: boolean;
 }) {
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirmDelete) {
+      setConfirmDelete(true);
+      setTimeout(() => setConfirmDelete(false), 3000);
+      return;
+    }
+    setDeleting(true);
+    await onDelete();
+    setDeleting(false);
+  };
+
   return (
-    <div
-      className={`sidebar__project-item ${isActive ? "sidebar__project-item--active" : ""}`}
-      style={{ position: "relative" }}
-    >
+    <>
       <div
-        style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, cursor: "pointer" }}
-        onClick={onSelect}
+        className={`sidebar__project-item ${isActive ? "sidebar__project-item--active" : ""}`}
+        style={{ position: "relative" }}
       >
         <div
-          className="sidebar__project-dot"
-          style={{ background: project.color }}
-        />
-        <span className="sidebar__project-name">{project.name}</span>
+          style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, cursor: "pointer", minWidth: 0 }}
+          onClick={onSelect}
+        >
+          <div className="sidebar__project-dot" style={{ background: project.color, flexShrink: 0 }} />
+          <span className="sidebar__project-name">{project.name}</span>
+        </div>
+
+        {sidebarOpen && (
+          <div style={{ display: "flex", gap: 2, flexShrink: 0 }} className="project-actions">
+            <button
+              onClick={(e) => { e.stopPropagation(); onPin(); }}
+              title={isPinned ? "Unpin" : "Pin"}
+              style={{ opacity: 0, background: "none", border: "none", cursor: "pointer", fontSize: 11, color: isPinned ? "var(--accent)" : "var(--text-muted)", padding: "2px 3px", borderRadius: 4, transition: "opacity 150ms" }}
+              className="pin-btn"
+            >
+              {isPinned ? "★" : "☆"}
+            </button>
+
+            <button
+              onClick={handleDelete}
+              title={confirmDelete ? "Click again to confirm" : "Delete project"}
+              disabled={deleting}
+              style={{
+                opacity: 0,
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                fontSize: 11,
+                color: confirmDelete ? "#ef4444" : "var(--text-muted)",
+                padding: "2px 3px",
+                borderRadius: 4,
+                transition: "opacity 150ms, color 150ms",
+                fontWeight: confirmDelete ? 700 : 400,
+              }}
+              className="delete-btn"
+            >
+              {deleting ? "…" : confirmDelete ? "✓?" : "✕"}
+            </button>
+          </div>
+        )}
       </div>
 
-      {sidebarOpen && (
-        <button
-          onClick={(e) => { e.stopPropagation(); onPin(); }}
-          title={isPinned ? "Unpin" : "Pin project"}
-          style={{
-            opacity: 0,
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            fontSize: 12,
-            color: isPinned ? "var(--accent)" : "var(--text-muted)",
-            padding: "2px 4px",
-            borderRadius: 4,
-            transition: "opacity 150ms",
-          }}
-          className="pin-btn"
-        >
-          {isPinned ? "★" : "☆"}
-        </button>
-      )}
-
-      <style>{`.sidebar__project-item:hover .pin-btn { opacity: 1 !important; }`}</style>
-    </div>
+      <style>{`
+        .sidebar__project-item:hover .pin-btn,
+        .sidebar__project-item:hover .delete-btn { opacity: 1 !important; }
+      `}</style>
+    </>
   );
 }

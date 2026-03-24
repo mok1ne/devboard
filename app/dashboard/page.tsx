@@ -76,7 +76,20 @@ export default function DashboardPage() {
     setProjects((prev) =>
       prev.map((p) =>
         p.id === project.id
-          ? { ...p, members: [...p.members, { ...member, id: member.user.id, createdAt: new Date(), userId: member.user.id, projectId: p.id }] }
+          ? {
+              ...p,
+              members: [
+                ...p.members,
+                {
+                  id: member.user.id,
+                  createdAt: new Date(),
+                  userId: member.user.id,
+                  projectId: p.id,
+                  role: member.role as import("@prisma/client").MemberRole,
+                  user: member.user,
+                },
+              ],
+            }
           : p
       )
     );
